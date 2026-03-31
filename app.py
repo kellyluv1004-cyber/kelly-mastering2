@@ -7,38 +7,37 @@ from pedalboard.io import AudioFile
 # 페이지 설정
 st.set_page_config(page_title="Kelly AI Mastering Studio", layout="centered")
 
-# --- 장르별 엔진 세팅 로직 ---
+# --- 세션 상태 초기화 (사라짐 방지 핵심) ---
+if 'mastered_results' not in st.session_state:
+    st.session_state.mastered_results = []
+
+# --- 장르별 엔진 세팅 ---
 def get_genre_settings(genre_name):
-    # 기본값
     settings = {"ratio": 4, "low_gain": 0, "high_gain": 0, "hpf": 30}
-    
     g = genre_name.lower()
     if any(x in g for x in ["pop", "r&b", "soul", "k-pop", "j-pop", "indie", "ballad"]):
-        settings.update({"ratio": 3.5, "high_gain": 1.5, "hpf": 35}) # 보컬 선명도
+        settings.update({"ratio": 3.5, "high_gain": 1.5, "hpf": 35})
     elif any(x in g for x in ["hip-hop", "trap", "lo-fi"]):
-        settings.update({"ratio": 5, "low_gain": 2.5, "hpf": 30}) # 저음 타격감
+        settings.update({"ratio": 5, "low_gain": 2.5, "hpf": 30})
     elif any(x in g for x in ["rock", "metal", "punk", "grunge"]):
-        settings.update({"ratio": 4.5, "low_gain": 1.0, "high_gain": 1.0}) # 밀도감
+        settings.update({"ratio": 4.5, "low_gain": 1.0, "high_gain": 1.0})
     elif any(x in g for x in ["electronic", "house", "techno", "tranco", "dubstep", "drum & bass"]):
-        settings.update({"ratio": 5.5, "low_gain": 2.0, "high_gain": 2.0, "hpf": 25}) # 화려한 엣지
+        settings.update({"ratio": 5.5, "low_gain": 2.0, "high_gain": 2.0, "hpf": 25})
     elif any(x in g for x in ["jazz", "blues", "funk", "gaspel"]):
-        settings.update({"ratio": 2.5, "low_gain": 0.5, "high_gain": 0.5}) # 자연스러운 질감
+        settings.update({"ratio": 2.5, "low_gain": 0.5, "high_gain": 0.5})
     elif any(x in g for x in ["classical", "ambient"]):
-        settings.update({"ratio": 1.5, "hpf": 20}) # 다이내믹 보존
+        settings.update({"ratio": 1.5, "hpf": 20})
     elif any(x in g for x in ["country", "reggae", "latin", "afrobeat", "disco"]):
-        settings.update({"ratio": 3.0, "high_gain": 1.2}) # 리듬감 강조
-        
+        settings.update({"ratio": 3.0, "high_gain": 1.2})
     return settings
 
-# --- 최적화된 마스터링 엔진 ---
+# --- 마스터링 엔진 ---
 @st.cache_data(show_spinner=False)
 def process_audio_engine(file_bytes, target_lufs, comp_db, out_ext, genre_name):
     try:
         gs = get_genre_settings(genre_name)
         with AudioFile(io.BytesIO(file_bytes)) as f:
             audio = f.read(f.frames)
-            
-            # 장르별 특화 체인 구성
             board = Pedalboard([
                 HighpassFilter(gs['hpf']),
                 LowShelfFilter(cutoff_frequency_hz=150, gain_db=gs['low_gain']),
@@ -47,7 +46,6 @@ def process_audio_engine(file_bytes, target_lufs, comp_db, out_ext, genre_name):
                 Gain(target_lufs - pyln.Meter(f.samplerate).integrated_loudness(audio.T)),
                 Limiter(threshold_db=-0.1)
             ])
-            
             processed = board(audio, f.samplerate)
             out_io = io.BytesIO()
             with AudioFile(out_io, 'w', f.samplerate, f.num_channels, format=out_ext) as o:
@@ -55,7 +53,7 @@ def process_audio_engine(file_bytes, target_lufs, comp_db, out_ext, genre_name):
             return out_io.getvalue()
     except: return None
 
-# --- UI 스타일링 (v2.2 유지 및 보강) ---
+# --- UI 스타일링 ---
 st.markdown("""
 <style>
     .stApp { background-color: #1a1c2c; color: #ffffff; }
@@ -71,21 +69,14 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 st.title("켈리의 AI 마스터링 스튜디오")
-st.caption("Kelly Studio Engine v2.3 | True Genre Engine")
+st.caption("Kelly Studio Engine v2.4 | Multi-Download Fix")
 
 # --- UI 레이아웃 ---
 st.markdown('<p class="label-text">음악 파일</p>', unsafe_allow_html=True)
 uploaded_files = st.file_uploader("Upload", type=["wav", "mp3"], accept_multiple_files=True, label_visibility="collapsed")
 
 st.markdown('<p class="label-text">장르 프리셋</p>', unsafe_allow_html=True)
-# 사용자님이 주신 상세 장르 리스트 적용
-genre_list = [
-    "POP", "Ballad", "K-POP", "J-POP", "R&B", "Soul", "Indie",
-    "Hip-Hop", "Trap", "Lo-Fi", "Rock", "Metal", "Punk", "Grunge",
-    "Electronic", "House", "Techno", "Tranco", "Dubstep", "Drum & Bass",
-    "Jazz", "Blues", "Funk", "Gaspel", "Classical", "Ambient",
-    "Country", "Reggae", "Latin", "Afrobeat", "Disco"
-]
+genre_list = ["POP", "Ballad", "K-POP", "J-POP", "R&B", "Soul", "Indie", "Hip-Hop", "Trap", "Lo-Fi", "Rock", "Metal", "Punk", "Grunge", "Electronic", "House", "Techno", "Tranco", "Dubstep", "Drum & Bass", "Jazz", "Blues", "Funk", "Gaspel", "Classical", "Ambient", "Country", "Reggae", "Latin", "Afrobeat", "Disco"]
 selected_genre = st.selectbox("Genre", genre_list, label_visibility="collapsed")
 
 st.markdown('<p class="label-text">출력 형식</p>', unsafe_allow_html=True)
@@ -100,19 +91,32 @@ st.markdown('<p class="label-text">3밴드 압축 강도</p>', unsafe_allow_html
 comp_mode = st.radio("Compression", ["🌙 Light", "⚡ Normal", "🔥 Strong"], label_visibility="collapsed", index=1)
 comp_db = {"🌙 Light": -18, "⚡ Normal": -22, "🔥 Strong": -26}[comp_mode]
 
-# --- 실행 ---
+# --- 실행 버튼 ---
 if st.button("AI 마스터링 시작", disabled=not uploaded_files):
-    results = []
-    with st.spinner(f"Processing for {selected_genre}..."):
+    st.session_state.mastered_results = [] # 새 작업 시작 시 기존 결과 비우기
+    with st.spinner(f"Processing..."):
         for f in uploaded_files:
             data = process_audio_engine(f.getvalue(), target_lufs, comp_db, out_ext, selected_genre)
-            if data: results.append({"name": f.name, "data": data})
+            if data:
+                st.session_state.mastered_results.append({
+                    "name": f.name,
+                    "data": data,
+                    "ext": out_ext
+                })
+
+# --- 결과 출력 (세션 상태를 읽어서 출력) ---
+if st.session_state.mastered_results:
+    st.success("✓ 모든 작업이 완료되었습니다!")
+    for idx, res in enumerate(st.session_state.mastered_results):
+        with st.expander(f"📥 {res['name']}", expanded=True):
+            st.audio(res['data'])
+            st.download_button(
+                label=f"저장 ({res['ext'].upper()})",
+                data=res['data'],
+                file_name=f"Mastered_{res['name']}.{res['ext']}",
+                key=f"dl_{idx}_{res['name']}" # 고유 키 부여
+            )
     
-    if results:
-        st.success(f"✓ {selected_genre} 스타일 마스터링 완료!")
-        for res in results:
-            with st.expander(f"📥 {res['name']}"):
-                st.audio(res['data'])
-                st.download_button(f"저장 ({out_ext.upper()})", res['data'], file_name=f"Mastered_{res['name']}.{out_ext}", key=res['name'])
-        
-        if st.button("🔄 다시 시작하기"): st.rerun()
+    if st.button("🔄 새로운 작업 시작하기"):
+        st.session_state.mastered_results = []
+        st.rerun()
