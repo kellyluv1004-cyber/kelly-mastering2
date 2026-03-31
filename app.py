@@ -5,78 +5,90 @@ import pyloudnorm as pyln
 from pedalboard import Pedalboard, Compressor, Gain, Limiter, HighpassFilter
 from pedalboard.io import AudioFile
 
-# 1. 페이지 설정 (가장 먼저 실행)
-st.set_page_config(page_title="Kelly AI Mastering v2", layout="wide")
+# 페이지 설정
+st.set_page_config(page_title="Kelly AI Mastering Studio", layout="centered")
 
-# 2. 캐싱 로직 (앱이 느려지는 것을 방지하는 핵심 엔진)
+# --- 캐싱 엔진 ---
 @st.cache_data(show_spinner=False)
 def process_audio_engine(file_bytes, target_lufs, comp_db, out_ext):
-    """오디오 처리를 별도 함수로 분리하여 메모리 효율 극대화"""
     try:
         with AudioFile(io.BytesIO(file_bytes)) as f:
             audio = f.read(f.frames)
-            samplerate = f.samplerate
-            
-            # 마스터링 체인 최적화
             board = Pedalboard([
                 HighpassFilter(30),
                 Compressor(threshold_db=comp_db, ratio=4),
-                Gain(target_lufs - pyln.Meter(samplerate).integrated_loudness(audio.T)),
+                Gain(target_lufs - pyln.Meter(f.samplerate).integrated_loudness(audio.T)),
                 Limiter(threshold_db=-0.1)
             ])
-            
-            processed = board(audio, samplerate)
+            processed = board(audio, f.samplerate)
             out_io = io.BytesIO()
-            with AudioFile(out_io, 'w', samplerate, f.num_channels, format=out_ext) as o:
+            with AudioFile(out_io, 'w', f.samplerate, f.num_channels, format=out_ext) as o:
                 o.write(processed)
             return out_io.getvalue()
-    except Exception as e:
-        return None
+    except: return None
 
-# 3. UI 및 디자인 (기존의 깔끔한 다크모드 유지)
+# --- UI 스타일링 (스크린샷 기반) ---
 st.markdown("""
 <style>
-    .stApp { background-color: #0e1117; color: #ffffff; }
-    .step-label { font-size: 1.2rem; font-weight: 700; margin: 20px 0 10px 0; color: #00ff88; }
-    div[data-baseweb="select"] { background-color: #1a1c23 !important; border: 1px solid #3e4451 !important; }
+    .stApp { background-color: #1a1c2c; color: #ffffff; }
+    .label-text { font-size: 0.9rem; font-weight: 600; color: #a0a0c0; margin-bottom: 8px; margin-top: 20px; }
+    /* 드롭다운 디자인 */
+    div[data-baseweb="select"] > div { background-color: #252844 !important; border: 1px solid #3d4163 !important; color: white !important; }
+    /* Radio 버튼 카드 스타일 */
+    [data-testid="stRadio"] > div { display: flex; gap: 10px; }
+    [data-testid="stRadio"] label { 
+        background: #252844; border: 1px solid #3d4163; border-radius: 8px; padding: 15px 25px !important;
+        flex: 1; text-align: center; cursor: pointer; transition: 0.2s;
+    }
+    [data-testid="stRadio"] label:hover { border-color: #00ff88; }
+    [data-testid="stRadio"] label:has(input:checked) { background: #2e3a4e; border-color: #00ff88; color: #00ff88 !important; }
+    [data-testid="stRadio"] div[data-testid="stMarkdownContainer"] p { font-size: 0.95rem; font-weight: 700; }
+    /* 시작 버튼 */
+    .stButton > button { 
+        background: #3e4461; color: #a0a0c0; border: none; width: 100%; height: 50px; 
+        font-weight: 700; border-radius: 8px; margin-top: 30px;
+    }
+    .stButton > button:hover:not(:disabled) { background: #00ff88; color: #000000; box-shadow: 0 0 20px rgba(0,255,136,0.3); }
 </style>
 """, unsafe_allow_html=True)
 
-st.title("🎵 Kelly AI Mastering v2")
-st.caption("Faster. Lighter. Better.")
+st.title("켈리의 AI 마스터링 스튜디오")
+st.caption("Kelly Studio Engine v2.1")
 
-# --- STEP 1: Upload ---
-st.markdown('<div class="step-label">STEP 1. Upload Tracks</div>', unsafe_allow_html=True)
-files = st.file_uploader("Upload WAV/MP3", type=["wav", "mp3"], accept_multiple_files=True, label_visibility="collapsed")
+# --- UI 레이아웃 시작 ---
+st.markdown('<p class="label-text">음악 파일</p>', unsafe_allow_html=True)
+uploaded_files = st.file_uploader("Upload", type=["wav", "mp3"], accept_multiple_files=True, label_visibility="collapsed")
 
-# --- STEP 2: Settings ---
-st.markdown('<div class="step-label">STEP 2. Mastering Settings</div>', unsafe_allow_html=True)
-col1, col2, col3 = st.columns(3)
+st.markdown('<p class="label-text">장르 프리셋</p>', unsafe_allow_html=True)
+genre = st.selectbox("Genre", ["Lo-Fi", "Pop", "Electronic", "Hip-Hop", "Rock", "Acoustic"], label_visibility="collapsed")
 
-with col1:
-    lufs_val = st.select_slider("Target Loudness (LUFS)", options=[-14, -13, -11, -9], value=-14)
-with col2:
-    comp_val = st.select_slider("Compression Intensity", options=["Light", "Normal", "Strong"], value="Normal")
-    comp_map = {"Light": -18, "Normal": -22, "Strong": -26}
-with col3:
-    ext_val = st.selectbox("Output Format", ["wav", "mp3", "flac"])
+st.markdown('<p class="label-text">출력 형식</p>', unsafe_allow_html=True)
+out_ext_raw = st.selectbox("Format", ["WAV · 16bit 44.1kHz", "MP3 · 320kbps", "FLAC · 24bit 96kHz"], label_visibility="collapsed")
+out_ext = "mp3" if "MP3" in out_ext_raw else ("flac" if "FLAC" in out_ext_raw else "wav")
 
-# --- STEP 3: Process ---
-if st.button("🚀 START MASTERING", use_container_width=True, disabled=not files):
+st.markdown('<p class="label-text">LUFS 타겟</p>', unsafe_allow_html=True)
+target_lufs_raw = st.selectbox("LUFS", ["Streaming –13", "YouTube –14", "Standard –11", "Loud –9"], label_visibility="collapsed")
+target_lufs = -float(target_lufs_raw.split("–")[1])
+
+st.markdown('<p class="label-text">3밴드 압축 강도</p>', unsafe_allow_html=True)
+comp_mode = st.radio("Compression", ["🌙 Light", "⚡ Normal", "🔥 Strong"], label_visibility="collapsed", index=1)
+comp_db = {"🌙 Light": -18, "⚡ Normal": -22, "🔥 Strong": -26}[comp_mode]
+
+# --- 실행 로직 ---
+if st.button("AI 마스터링 시작", disabled=not uploaded_files):
     results = []
-    progress_bar = st.progress(0)
+    with st.spinner("Processing..."):
+        for f in uploaded_files:
+            data = process_audio_engine(f.getvalue(), target_lufs, comp_db, out_ext)
+            if data: results.append({"name": f.name, "data": data})
     
-    for i, f in enumerate(files):
-        # 캐싱된 엔진 호출 (이미 처리한 설정이면 즉시 반환됨)
-        output = process_audio_engine(f.getvalue(), lufs_val, comp_map[comp_val], ext_val)
-        if output:
-            results.append({"name": f.name, "data": output})
-        progress_bar.progress((i + 1) / len(files))
-    
-    st.success(f"✅ {len(results)} Tracks Mastered!")
-    
-    # 결과 출력
-    for res in results:
-        with st.expander(f"📥 {res['name']}"):
-            st.audio(res['data'])
-            st.download_button("Download", res['data'], file_name=f"Mastered_{res['name']}.{ext_val}")
+    if results:
+        st.success("✓ 마스터링 완료!")
+        for res in results:
+            with st.expander(f"📥 {res['name']}"):
+                st.audio(res['data'])
+                st.download_button(f"저장 ({out_ext.upper()})", res['data'], file_name=f"Mastered_{res['name']}.{out_ext}")
+        
+        # 다시 시작하기 버튼
+        if st.button("🔄 다시 시작하기"):
+            st.rerun()
