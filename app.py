@@ -68,6 +68,7 @@ c1, c2, c3, c4 = st.columns(4)
 with c1:
     st.markdown("🎯 **장르 선택**")
     # formatted_genres 로직 적용
+    st.markdown('<p class="guide-text">커스텀</p>', unsafe_allow_html=True)
     sel_genre = st.selectbox("Genre", ["Pop", "K-Pop", "Hip-hop", "Rock", "Techno", "Classical", "Disco"], index=0, label_visibility="collapsed")
 with c2:
     st.markdown("💾 **출력 형식**")
