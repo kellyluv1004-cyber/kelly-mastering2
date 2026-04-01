@@ -98,11 +98,20 @@ files = st.file_uploader("STEP 1. 오디오 파일 업로드", type=["wav", "mp3
 c1, c2, c3, c4 = st.columns(4)
 with c1: sel_genre = st.selectbox("🎯 장르", full_menu, index=5) # Lo-fi 기본 선택 편의성
 with c2: out_ext = st.selectbox("💾 형식", ["wav", "mp3", "flac"])
-with c3: target_lufs = st.selectbox(
-    "🔊 음압(LUFS)", 
-    [-14, -13, -11, -9], 
-    index=1
-)
+with c3: # 제목을 직접 써주어 디자인을 깔끔하게 만듭니다.
+    st.markdown("**🔊 음압(LUFS)**") 
+    target_lufs = st.selectbox(
+        "L", # 이 라벨은 아래 설정으로 숨겨집니다.
+        options=[-14, -13, -11, -9], 
+        index=1, 
+        format_func=lambda x: {
+            -14: "-14 (유튜브/스포티파이)",
+            -13: "-13 (일반 스트리밍)",
+            -11: "-11 (디지털 싱글)",
+            -9: "-9 (클럽/EDM)"
+        }.get(x),
+        label_visibility="collapsed" # 불필요한 라벨을 숨겨 깔끔하게 만듭니다.
+    )
 with c4: mode = st.selectbox("⚡ 강도", ["Light", "Normal", "Strong"], index=1)
 
 if st.button("🚀 RUN MASTERING ENGINE", use_container_width=True, disabled=not files):
