@@ -5,9 +5,10 @@ import numpy as np
 from pedalboard import Pedalboard, Compressor, Gain, Limiter, HighpassFilter
 from pedalboard.io import AudioFile
 
-# 1. 페이지 설정 및 다크모드 스타일 적용
-st.set_page_config(page_title="Kelly AI Mastering v5.2", layout="wide")
+# 1. 페이지 설정
+st.set_page_config(page_title="Kelly AI Mastering v5.3", layout="wide")
 
+# 다크모드 및 버튼 디자인 스타일
 st.markdown("""
     <style>
     .stApp { background-color: #0e1117; color: white; }
@@ -16,20 +17,67 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# 2. 장르 데이터베이스
+# 2. [전 장르 복구] 28개 장르 정밀 데이터베이스
 GENRE_DATA = {
-    "Lo-fi": {"low": {"thr": -20, "rat": 2.0}, "mid": {"thr": -22, "rat": 1.5}, "hi": {"thr": -26, "rat": 1.2}, "glue": "Light"},
-    "Hip-hop": {"low": {"thr": -14, "rat": 3.0}, "mid": {"thr": -18, "rat": 2.5}, "hi": {"thr": -22, "rat": 2.0}, "glue": "Normal"},
+    # 팝/R&B
     "Pop": {"low": {"thr": -18, "rat": 2.0}, "mid": {"thr": -20, "rat": 1.8}, "hi": {"thr": -22, "rat": 1.5}, "glue": "Normal"},
+    "Ballad": {"low": {"thr": -20, "rat": 2.0}, "mid": {"thr": -22, "rat": 1.5}, "hi": {"thr": -24, "rat": 1.2}, "glue": "Light"},
     "K-Pop": {"low": {"thr": -18, "rat": 2.5}, "mid": {"thr": -18, "rat": 2.0}, "hi": {"thr": -20, "rat": 1.8}, "glue": "Normal"},
-    "Electronic": {"low": {"thr": -16, "rat": 2.5}, "mid": {"thr": -20, "rat": 2.0}, "hi": {"thr": -20, "rat": 1.8}, "glue": "Normal"},
+    "J-Pop": {"low": {"thr": -18, "rat": 2.0}, "mid": {"thr": -20, "rat": 1.8}, "hi": {"thr": -22, "rat": 1.5}, "glue": "Normal"},
+    "R&B": {"low": {"thr": -16, "rat": 2.5}, "mid": {"thr": -20, "rat": 2.0}, "hi": {"thr": -22, "rat": 1.8}, "glue": "Normal"},
+    "Soul": {"low": {"thr": -18, "rat": 2.0}, "mid": {"thr": -20, "rat": 1.8}, "hi": {"thr": -22, "rat": 1.5}, "glue": "Normal"},
+    "Indie": {"low": {"thr": -20, "rat": 1.5}, "mid": {"thr": -22, "rat": 1.3}, "hi": {"thr": -22, "rat": 1.1}, "glue": "Light"},
+
+    # 힙합/어반 (이미지 수치 반영)
+    "Hip-hop": {"low": {"thr": -14, "rat": 3.0}, "mid": {"thr": -18, "rat": 2.5}, "hi": {"thr": -22, "rat": 2.0}, "glue": "Normal"},
+    "Trap": {"low": {"thr": -14, "rat": 3.0}, "mid": {"thr": -18, "rat": 2.5}, "hi": {"thr": -22, "rat": 2.0}, "glue": "Light"},
+    "Lo-fi": {"low": {"thr": -20, "rat": 2.0}, "mid": {"thr": -22, "rat": 1.5}, "hi": {"thr": -26, "rat": 1.2}, "glue": "Light"},
+
+    # 일렉트로닉 (이미지 수치 반영)
+    "Electronic": {"low": {"thr": -16, "rat": 2.5}, "mid": {"thr": -20, "rat": 2.0}, "hi": {"thr": -20, "rat": 1.8}, "glue": "Light"},
+    "House": {"low": {"thr": -16, "rat": 2.5}, "mid": {"thr": -20, "rat": 2.2}, "hi": {"thr": -20, "rat": 2.0}, "glue": "Normal"},
+    "Techno": {"low": {"thr": -16, "rat": 2.5}, "mid": {"thr": -20, "rat": 2.2}, "hi": {"thr": -20, "rat": 2.0}, "glue": "Normal"},
+    "Trance": {"low": {"thr": -10, "rat": 2.0}, "mid": {"thr": -20, "rat": 2.0}, "hi": {"thr": -18, "rat": 1.5}, "glue": "Normal"},
+    "Dubstep": {"low": {"thr": -12, "rat": 3.5}, "mid": {"thr": -18, "rat": 3.0}, "hi": {"thr": -20, "rat": 2.5}, "glue": "Strong"},
+    "Drum & Bass": {"low": {"thr": -14, "rat": 3.0}, "mid": {"thr": -18, "rat": 2.5}, "hi": {"thr": -15, "rat": 2.0}, "glue": "Strong"},
+
+    # 재즈/블루스
+    "Jazz": {"low": {"thr": -20, "rat": 1.5}, "mid": {"thr": -22, "rat": 1.3}, "hi": {"thr": -24, "rat": 1.1}, "glue": "Light"},
+    "Blues": {"low": {"thr": -18, "rat": 2.0}, "mid": {"thr": -20, "rat": 1.8}, "hi": {"thr": -22, "rat": 1.5}, "glue": "Normal"},
+    "Funk": {"low": {"thr": -16, "rat": 2.5}, "mid": {"thr": -18, "rat": 2.2}, "hi": {"thr": -20, "rat": 2.0}, "glue": "Normal"},
+    "Gospel": {"low": {"thr": -18, "rat": 2.0}, "mid": {"thr": -18, "rat": 1.8}, "hi": {"thr": -22, "rat": 1.5}, "glue": "Normal"},
+
+    # 록/메탈
+    "Rock": {"low": {"thr": -16, "rat": 2.5}, "mid": {"thr": -18, "rat": 2.2}, "hi": {"thr": -20, "rat": 2.0}, "glue": "Normal"},
+    "Metal": {"low": {"thr": -14, "rat": 3.0}, "mid": {"thr": -16, "rat": 2.5}, "hi": {"thr": -18, "rat": 2.0}, "glue": "Strong"},
+    "Punk": {"low": {"thr": -14, "rat": 3.0}, "mid": {"thr": -16, "rat": 2.5}, "hi": {"thr": -18, "rat": 2.0}, "glue": "Strong"},
+
+    # 클래식/월드
+    "Classical": {"low": {"thr": -22, "rat": 1.2}, "mid": {"thr": -24, "rat": 1.1}, "hi": {"thr": -26, "rat": 1.05}, "glue": "Light"},
+    "Ambient": {"low": {"thr": -22, "rat": 1.2}, "mid": {"thr": -24, "rat": 1.1}, "hi": {"thr": -26, "rat": 1.05}, "glue": "Light"},
+    "Country": {"low": {"thr": -18, "rat": 2.0}, "mid": {"thr": -20, "rat": 1.8}, "hi": {"thr": -22, "rat": 1.5}, "glue": "Normal"},
+    "Reggae": {"low": {"thr": -14, "rat": 2.5}, "mid": {"thr": -20, "rat": 2.2}, "hi": {"thr": -24, "rat": 1.8}, "glue": "Normal"},
+    "Latin": {"low": {"thr": -16, "rat": 2.5}, "mid": {"thr": -18, "rat": 2.2}, "hi": {"thr": -22, "rat": 2.0}, "glue": "Normal"},
+
     "Default": {"low": {"thr": -18, "rat": 2.0}, "mid": {"thr": -20, "rat": 1.5}, "hi": {"thr": -22, "rat": 1.2}, "glue": "Normal"}
 }
 
-# 장르 메뉴 구성
-full_menu = ["   Lo-fi", "   Hip-hop", "   Pop", "   K-Pop", "   Electronic"]
+# 메뉴 구조 (카테고리 분류)
+GENRE_STRUCTURE = {
+    "팝/R&B": ["Pop", "Ballad", "K-Pop", "J-Pop", "R&B", "Soul", "Indie"],
+    "힙합/어반": ["Hip-hop", "Trap", "Lo-fi"],
+    "일렉트로닉": ["Electronic", "House", "Techno", "Trance", "Dubstep", "Drum & Bass"],
+    "재즈/블루스": ["Jazz", "Blues", "Funk", "Gospel"],
+    "록/메탈": ["Rock", "Metal", "Punk"],
+    "클래식/기타": ["Classical", "Ambient", "Country", "Reggae", "Latin"]
+}
 
-# 마스터링 엔진 함수 (에러 방지 safe_rat 적용)
+full_menu = []
+for cat, subs in GENRE_STRUCTURE.items():
+    full_menu.append(f"--- {cat}")
+    for s in subs: full_menu.append(f"   {s}")
+
+# 3. 마스터링 코어 함수
 def run_mastering_process(audio, sr, genre_name, target_lufs, intensity):
     g_key = genre_name.strip()
     data = GENRE_DATA.get(g_key, GENRE_DATA["Default"])
@@ -52,21 +100,19 @@ def run_mastering_process(audio, sr, genre_name, target_lufs, intensity):
     final_chain = Pedalboard([board, Gain(final_gain), Limiter(threshold_db=-0.1)])
     return final_chain(audio, sr)
 
-# 3. UI 본문
-st.title("🎵 Kelly AI Mastering v5.2")
+# 4. UI 본문
+st.title("🎵 Kelly AI Mastering v5.3")
 
-# STEP 1
 st.markdown("### STEP 1. 오디오 파일 업로드")
 files = st.file_uploader("", type=["wav", "mp3"], accept_multiple_files=True, label_visibility="collapsed")
 
-# STEP 2
 st.write("---")
 st.markdown("### STEP 2. 마스터링 설정")
 c1, c2, c3, c4 = st.columns(4)
 
 with c1:
     st.markdown("**🎯 장르**")
-    sel_genre = st.selectbox("G", full_menu, index=0, label_visibility="collapsed")
+    sel_genre = st.selectbox("G", full_menu, index=10, label_visibility="collapsed") # Lo-fi 위치
 
 with c2:
     st.markdown("**💾 출력 형식**")
@@ -84,21 +130,22 @@ with c4:
     st.markdown("**⚡ 강도**")
     mode = st.selectbox("I", ["Light", "Normal", "Strong"], index=1, label_visibility="collapsed")
 
-# 실행 버튼
 st.write("")
 if st.button("🚀 RUN MASTERING ENGINE", disabled=not files):
-    for f in files:
-        with st.status(f"🎧 {f.name} 처리 중..."):
-            with AudioFile(io.BytesIO(f.getvalue())) as af:
-                audio = af.read(af.frames)
-                mastered_audio = run_mastering_process(audio, af.samplerate, sel_genre, target_lufs, mode)
-                out_io = io.BytesIO()
-                with AudioFile(out_io, 'w', af.samplerate, af.num_channels, format=out_ext) as o:
-                    o.write(mastered_audio)
-                st.audio(out_io.getvalue())
-                st.download_button(f"📥 {f.name} 다운로드", out_io.getvalue(), file_name=f"Master_{f.name}.{out_ext}")
+    if sel_genre.startswith("---"):
+        st.error("세부 장르를 선택해 주세요!")
+    else:
+        for f in files:
+            with st.status(f"🎧 {f.name} 처리 중..."):
+                with AudioFile(io.BytesIO(f.getvalue())) as af:
+                    audio = af.read(af.frames)
+                    mastered_audio = run_mastering_process(audio, af.samplerate, sel_genre, target_lufs, mode)
+                    out_io = io.BytesIO()
+                    with AudioFile(out_io, 'w', af.samplerate, af.num_channels, format=out_ext) as o:
+                        o.write(mastered_audio)
+                    st.audio(out_io.getvalue())
+                    st.download_button(f"📥 {f.name} 다운로드", out_io.getvalue(), file_name=f"Master_{f.name}.{out_ext}")
 
-# 새로 시작하기 (맨 하단)
 st.write("---")
 if st.button("🔄 모든 설정 초기화 (새로 시작하기)"):
     st.rerun()
