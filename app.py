@@ -10,15 +10,51 @@ st.set_page_config(page_title="Kelly AI Mastering v4.7", layout="wide")
 
 # 2. 전 장르 데이터베이스 (이미지 수치 완벽 반영)
 GENRE_DATA = {
+    # 팝/R&B
     "Pop": {"low_thr": -18, "mid_thr": -20, "hi_thr": -22, "ratio": 2.0, "glue": "Normal"},
+    "Ballad": {"low_thr": -20, "mid_thr": -22, "hi_thr": -24, "ratio": 2.0, "glue": "Light"},
     "K-Pop": {"low_thr": -18, "mid_thr": -18, "hi_thr": -20, "ratio": 2.5, "glue": "Normal"},
+    "J-Pop": {"low_thr": -18, "mid_thr": -20, "hi_thr": -22, "ratio": 2.0, "glue": "Normal"},
+    "R&B": {"low_thr": -16, "mid_thr": -20, "hi_thr": -22, "ratio": 2.5, "glue": "Normal"},
+    "Soul": {"low_thr": -18, "mid_thr": -20, "hi_thr": -22, "ratio": 2.0, "glue": "Normal"},
+    "Indie": {"low_thr": -20, "mid_thr": -22, "hi_thr": -22, "ratio": 1.5, "glue": "Light"},
+
+    # 힙합/어반
     "Hip-hop": {"low_thr": -14, "mid_thr": -18, "hi_thr": -22, "ratio": 3.0, "glue": "Normal"},
-    "Metal": {"low_thr": -14, "mid_thr": -16, "hi_thr": -18, "ratio": 3.0, "glue": "Strong"},
-    "Rock": {"low_thr": -16, "mid_thr": -18, "hi_thr": -20, "ratio": 2.5, "glue": "Normal"},
+    "Trap": {"low_thr": -14, "mid_thr": -18, "hi_thr": -22, "ratio": 3.0, "glue": "Light"},
+    "Lo-fi": {"low_thr": -20, "mid_thr": -22, "hi_thr": -26, "ratio": 1.5, "glue": "Light"},
+
+    # 일렉트로닉
+    "Electronic": {"low_thr": -16, "mid_thr": -20, "hi_thr": -20, "ratio": 2.5, "glue": "Light"},
+    "House": {"low_thr": -16, "mid_thr": -20, "hi_thr": -20, "ratio": 2.5, "glue": "Normal"},
+    "Techno": {"low_thr": -16, "mid_thr": -20, "hi_thr": -20, "ratio": 2.5, "glue": "Normal"},
+    "Trance": {"low_thr": -18, "mid_thr": -20, "hi_thr": -18, "ratio": 2.0, "glue": "Normal"},
+    "Dubstep": {"low_thr": -12, "mid_thr": -18, "hi_thr": -20, "ratio": 3.0, "glue": "Strong"},
+    "Drum & Bass": {"low_thr": -14, "mid_thr": -18, "hi_thr": -18, "ratio": 3.0, "glue": "Strong"},
+
+    # 재즈/블루스
     "Jazz": {"low_thr": -20, "mid_thr": -22, "hi_thr": -24, "ratio": 1.5, "glue": "Light"},
+    "Blues": {"low_thr": -18, "mid_thr": -20, "hi_thr": -22, "ratio": 2.0, "glue": "Normal"},
+    "Funk": {"low_thr": -16, "mid_thr": -18, "hi_thr": -20, "ratio": 2.5, "glue": "Normal"},
+    "Gospel": {"low_thr": -18, "mid_thr": -18, "hi_thr": -22, "ratio": 2.0, "glue": "Normal"},
+
+    # 록/메탈
+    "Rock": {"low_thr": -16, "mid_thr": -18, "hi_thr": -20, "ratio": 2.5, "glue": "Normal"},
+    "Metal": {"low_thr": -14, "mid_thr": -16, "hi_thr": -18, "ratio": 3.0, "glue": "Strong"},
+    "Punk": {"low_thr": -14, "mid_thr": -16, "hi_thr": -18, "ratio": 3.0, "glue": "Strong"},
+    "Grunge": {"low_thr": -14, "mid_thr": -18, "hi_thr": -20, "ratio": 3.0, "glue": "Strong"},
+
+    # 클래식/앰비언트
     "Classical": {"low_thr": -22, "mid_thr": -24, "hi_thr": -26, "ratio": 1.2, "glue": "Light"},
-    "Disco": {"low_thr": -16, "mid_thr": -18, "hi_thr": -20, "ratio": 2.5, "glue": "Normal"},
+    "Ambient": {"low_thr": -22, "mid_thr": -24, "hi_thr": -26, "ratio": 1.2, "glue": "Light"},
+
+    # 월드뮤직
+    "Country": {"low_thr": -18, "mid_thr": -20, "hi_thr": -22, "ratio": 2.0, "glue": "Normal"},
     "Reggae": {"low_thr": -14, "mid_thr": -20, "hi_thr": -24, "ratio": 2.5, "glue": "Normal"},
+    "Latin": {"low_thr": -16, "mid_thr": -18, "hi_thr": -22, "ratio": 2.5, "glue": "Normal"},
+    "Afrobeat": {"low_thr": -16, "mid_thr": -18, "hi_thr": -22, "ratio": 2.5, "glue": "Normal"},
+    "Disco": {"low_thr": -16, "mid_thr": -18, "hi_thr": -20, "ratio": 2.5, "glue": "Normal"},
+    
     "Default": {"low_thr": -18, "mid_thr": -20, "hi_thr": -22, "ratio": 2.0, "glue": "Normal"}
 }
 
