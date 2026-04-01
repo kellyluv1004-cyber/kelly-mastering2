@@ -117,9 +117,18 @@ with c2:
 
 with c3:
     st.markdown("**🔊 음압(LUFS)**")
-    target_lufs = st.selectbox("L", [-14, -13, -11, -9], index=1, 
-                               format_func=lambda x: {-14: "-14 (유튜브)", -13: "-13 (표준)", -11: "-11 (싱글)", -9: "-9 (클럽)"}.get(x),
-                               label_visibility="collapsed")
+    target_lufs = st.selectbox(
+        "L", 
+        options=[-14, -13, -11, -9], 
+        index=1, 
+        format_func=lambda x: {
+            -14: "-14 (유튜브/스포티파이)",
+            -13: "-13 (일반 스트리밍)",
+            -11: "-11 (디지털 싱글)",
+            -9: "-9 (클럽/EDM)"
+        }.get(x),
+        label_visibility="collapsed"
+    )
 
 with c4:
     st.markdown("**⚡ 강도**")
