@@ -22,7 +22,7 @@ st.markdown("""
     
     /* 동그라미 영역: 업로드 박스 가이드 강화 */
     .stFileUploader section {
-        border: 2px dashed #00ff88 !important;
+        border: 2px dashed #01961d !important;
         background-color: #1a1c23 !important;
         padding: 20px !important;
     }
