@@ -11,9 +11,7 @@ st.set_page_config(page_title="Kelly AI Mastering v5.3", layout="wide")
 # 다크모드 및 버튼 디자인 스타일
 st.markdown("""
     <style>
-    .stApp { background-color: #0e1117; color: white; }
-    .stButton>button { border-radius: 5px; height: 3em; background-color: #4facfe; color: white; border: none; width: 100%; }
-    hr { border-color: #333; }
+    .stApp { background-color: #0e1117 !important; color: white !important; }
     </style>
     """, unsafe_allow_html=True)
 
@@ -144,7 +142,13 @@ if st.button("🚀 RUN MASTERING ENGINE", disabled=not files):
                     with AudioFile(out_io, 'w', af.samplerate, af.num_channels, format=out_ext) as o:
                         o.write(mastered_audio)
                     st.audio(out_io.getvalue())
-                    st.download_button(f"📥 {f.name} 다운로드", out_io.getvalue(), file_name=f"Master_{f.name}.{out_ext}")
+  # i 대신 f.name을 key로 사용하여 버튼을 고정합니다.
+                st.download_button(
+                    label=f"📥 {f.name} 다운로드", 
+                    data=out_io.getvalue(), 
+                    file_name=f"Master_{f.name}.{out_ext}",
+                    key=f"dl_{f.name}"  # 고유 키 추가
+                )
 
 st.write("---")
 if st.button("🔄 모든 설정 초기화 (새로 시작하기)"):
