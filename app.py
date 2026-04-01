@@ -147,3 +147,11 @@ if st.button("🚀 RUN MASTERING ENGINE", use_container_width=True, disabled=not
                     o.write(mastered_audio)
                 st.audio(out_io.getvalue())
                 st.download_button(f"Download {f.name}", out_io.getvalue(), file_name=f"Master_{f.name}.{out_ext}")
+
+------------------
+# 모든 작업 완료 메시지 아래 혹은 실행 버튼 근처에 추가
+st.divider() # 구분선 하나 그어주면 깔끔합니다.
+
+if st.button("🔄 모든 설정 초기화 및 새로 시작하기", use_container_width=True):
+    st.cache_resource.clear() # 캐시 삭제
+    st.rerun() # 앱 재실행 (모든 입력값 초기화)
