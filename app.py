@@ -103,7 +103,17 @@ with c1:
 
 with c2:
     st.markdown("**💾 형식**")
-    out_ext = st.selectbox("F", ["wav", "mp3", "flac"], label_visibility="collapsed")
+    out_ext = st.selectbox(
+        "F", 
+        options=["wav", "mp3", "flac"], 
+        index=0,
+        format_func=lambda x: {
+            "wav": "WAV (44.1kHz/16bit)",
+            "mp3": "MP3 (320kbps)",
+            "flac": "FLAC (96kHz/24bit)"
+        }.get(x),
+        label_visibility="collapsed"
+    )
 
 with c3:
     st.markdown("**🔊 음압(LUFS)**")
