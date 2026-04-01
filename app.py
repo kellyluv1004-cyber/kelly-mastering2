@@ -128,28 +128,51 @@ with c4:
     st.markdown("**⚡ 강도**")
     mode = st.selectbox("I", ["Light", "Normal", "Strong"], index=1, label_visibility="collapsed")
 
+# --- 131번 줄부터 시작되는 교체 코드 ---
+
+# 1. 마스터링된 결과를 저장할 주머니(세션)가 없으면 생성
+if 'mastered_results' not in st.session_state:
+    st.session_state.mastered_results = []
+
 st.write("")
+# 2. 실행 버튼 (파일이 업로드되었을 때만 활성화)
 if st.button("🚀 RUN MASTERING ENGINE", disabled=not files):
-    if sel_genre.startswith("---"):
-        st.error("세부 장르를 선택해 주세요!")
-    else:
-        for f in files:
-            with st.status(f"🎧 {f.name} 처리 중..."):
-                with AudioFile(io.BytesIO(f.getvalue())) as af:
-                    audio = af.read(af.frames)
-                    mastered_audio = run_mastering_process(audio, af.samplerate, sel_genre, target_lufs, mode)
-                    out_io = io.BytesIO()
-                    with AudioFile(out_io, 'w', af.samplerate, af.num_channels, format=out_ext) as o:
-                        o.write(mastered_audio)
-                    st.audio(out_io.getvalue())
-  # i 대신 f.name을 key로 사용하여 버튼을 고정합니다.
-                st.download_button(
-                    label=f"📥 {f.name} 다운로드", 
-                    data=out_io.getvalue(), 
-                    file_name=f"Master_{f.name}.{out_ext}",
-                    key=f"dl_{f.name}"  # 고유 키 추가
-                )
+    # 새 작업 시작 시 이전 기록 비우기
+    st.session_state.mastered_results = []
+    
+    for f in files:
+        with st.status(f"🎧 {f.name} 처리 중..."):
+            with AudioFile(io.BytesIO(f.getvalue())) as af:
+                audio = af.read(af.frames)
+                mastered_audio = run_mastering_process(audio, af.samplerate, sel_genre, target_lufs, mode)
+                
+                out_io = io.BytesIO()
+                with AudioFile(out_io, 'w', af.samplerate, af.num_channels, format=out_ext) as o:
+                    o.write(mastered_audio)
+                
+                # 결과물을 주머니(session_state)에 저장 (이게 핵심!)
+                st.session_state.mastered_results.append({
+                    "name": f.name,
+                    "data": out_io.getvalue()
+                })
+
+# 3. 주머니에 저장된 결과물을 화면에 표시 (새로고침되어도 유지됨)
+if st.session_state.mastered_results:
+    st.write("---")
+    st.success("✅ 마스터링 완료! 아래에서 하나씩 다운로드하세요.")
+    
+    for idx, item in enumerate(st.session_state.mastered_results):
+        with st.expander(f"🎵 {item['name']}", expanded=True):
+            st.audio(item['data'])
+            st.download_button(
+                label=f"📥 {item['name']} 다운로드",
+                data=item['data'],
+                file_name=f"Master_{item['name']}.{out_ext}",
+                key=f"btn_{idx}"  # 고유 키로 버튼 고정
+            )
 
 st.write("---")
+# 4. 새로 시작하기 버튼
 if st.button("🔄 모든 설정 초기화 (새로 시작하기)"):
+    st.session_state.mastered_results = [] # 데이터 비우기
     st.rerun()
