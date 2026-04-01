@@ -5,9 +5,9 @@ from pedalboard import Pedalboard, Compressor, Gain, Limiter, HighpassFilter, Pe
 from pedalboard.io import AudioFile
 
 # 1. 페이지 설정
-st.set_page_config(page_title="Kelly AI Mastering v3.3", layout="wide")
+st.set_page_config(page_title="Kelly AI Mastering v3.4", layout="wide")
 
-# 2. 장르별 데이터 (v3.2 유지)
+# 2. 장르별 황금값 데이터 (v3.2 유지)
 GENRE_DATA = {
     "Pop": {"sub": 0.5, "low": 1.2, "um": 1.0, "hi": 1.5, "ratio": 2.5},
     "Ballad": {"sub": 1.0, "low": 1.5, "um": -1.0, "hi": -1.0, "ratio": 1.8},
@@ -35,7 +35,7 @@ for header, subs in GENRE_STRUCTURE.items():
     for sub in subs:
         formatted_genres.append(f"   {sub}")
 
-# 4. 마스터링 엔진 로직 (v3.2 동일)
+# 4. 고음질 마스터링 엔진
 def get_album_quality_engine(selected_genre, target_lufs, comp_mode):
     g = selected_genre.strip()
     data = GENRE_DATA.get(g, GENRE_DATA["Default"])
@@ -55,54 +55,45 @@ def get_album_quality_engine(selected_genre, target_lufs, comp_mode):
         Limiter(threshold_db=-1.0, release_ms=100)
     ])
 
-# 5. UI 디자인 (글씨 밝기 대폭 강화)
+# 5. UI 스타일링 (글씨 밝기 및 레이아웃 최적화)
 st.markdown("""
 <style>
-    /* 배경 및 기본 텍스트 */
     .stApp { background-color: #0e1117; color: #ffffff; }
     
-    /* 섹션 라벨 (STEP 1, 2...) */
+    /* 모든 메인 라벨 글씨를 밝게 */
+    label[data-testid="stWidgetLabel"] p {
+        color: #FFFFFF !important;
+        font-size: 1.1rem !important;
+        font-weight: 800 !important;
+        text-shadow: 1px 1px 3px rgba(0,0,0,0.8);
+    }
+    
     .step-label { 
         color: #00ff88; 
         font-weight: 800; 
-        font-size: 1.2rem; 
-        margin-top: 30px; 
-        text-shadow: 0px 0px 10px rgba(0, 255, 136, 0.3);
-    }
-    
-    /* 설정 항목 글씨 (Genre, Format, LUFS, Compression) */
-    .stSelectbox label, .stFileUploader label {
-        color: #FFFFFF !important;  /* 완전한 화이트 */
-        font-size: 1.05rem !important;
-        font-weight: 700 !important;
-        opacity: 1 !important;
-        margin-bottom: 10px !important;
-        text-shadow: 1px 1px 2px rgba(0,0,0,0.5); /* 가독성용 그림자 */
+        font-size: 1.3rem; 
+        margin-top: 35px; 
+        margin-bottom: 15px;
     }
 
-    /* 버튼 스타일 */
+    /* 버튼 스타일 강화 */
     .stButton > button { 
         background: linear-gradient(90deg, #00ff88, #00d4ff) !important; 
         color: #000000 !important; 
         font-weight: 800 !important; 
-        height: 55px !important; 
-        border-radius: 12px !important;
-        border: none !important;
-        transition: 0.3s;
-    }
-    .stButton > button:hover {
-        transform: scale(1.01);
-        box-shadow: 0px 0px 20px rgba(0, 255, 136, 0.5);
+        height: 60px !important; 
+        border-radius: 15px !important;
+        margin-top: 20px;
     }
 </style>
 """, unsafe_allow_html=True)
 
-st.title("🎵 Kelly AI Mastering v3.3")
-st.caption("Album-Ready Quality | Enhanced Visibility UI")
+st.title("🎵 Kelly AI Mastering v3.4")
+st.caption("Album-Ready Quality | High-Contrast Pro UI")
 
 # STEP 1
 st.markdown('<div class="step-label">STEP 1. Upload Tracks</div>', unsafe_allow_html=True)
-files = st.file_uploader("음악 파일을 올려주세요", type=["wav", "mp3"], accept_multiple_files=True)
+files = st.file_uploader("마스터링할 음원을 선택하세요", type=["wav", "mp3"], accept_multiple_files=True)
 
 # STEP 2
 st.markdown('<div class="step-label">STEP 2. Professional Settings</div>', unsafe_allow_html=True)
@@ -116,17 +107,32 @@ with c1:
     selected_genre = raw_genre.strip()
 
 with c2:
-    out_ext = st.selectbox("Output Format", ["wav", "mp3", "flac"])
+    # 상세 설명 복구
+    format_options = {
+        "WAV · 16bit 44.1kHz": "wav",
+        "MP3 · 320kbps": "mp3",
+        "FLAC · 24bit 96kHz": "flac"
+    }
+    selected_format_label = st.selectbox("Output Format", list(format_options.keys()))
+    out_ext = format_options[selected_format_label]
 
 with c3:
-    target_lufs = st.selectbox("Target Loudness (LUFS)", [-14, -13, -11, -9], index=1)
+    # 상세 가이드 문구 복구
+    lufs_options = {
+        "Streaming (–13 LUFS)": -13.0,
+        "YouTube (–14 LUFS)": -14.0,
+        "CD Standard (–11 LUFS)": -11.0,
+        "Loud/Club (–9 LUFS)": -9.0
+    }
+    selected_lufs_label = st.selectbox("Target Loudness (LUFS)", list(lufs_options.keys()))
+    target_lufs = lufs_options[selected_lufs_label]
 
 with c4:
     comp_mode = st.selectbox("Compression Intensity", ["Light", "Normal", "Strong"], index=1)
 
-# 실행
+# 실행 및 결과 출력
 if st.button("🚀 RUN ALBUM-READY MASTERING", use_container_width=True, disabled=not files):
-    with st.spinner(f"Processing..."):
+    with st.spinner(f"Applying {selected_genre} Mastering..."):
         for f in files:
             with AudioFile(io.BytesIO(f.getvalue())) as audio_f:
                 audio = audio_f.read(audio_f.frames)
